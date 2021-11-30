@@ -8,11 +8,13 @@ using System.Drawing;
 
 namespace AlgosGraph
 {
-    
+
     class Vertex //вершина
     {
         public int Number { get; set; } //у вершины есть число, котоое там хранится
+        public int metka { get; set; }
         public Label lb;
+        public Label lbmetka;
         public bool Clicked;
         public int Info { get; set; }
     
@@ -28,6 +30,8 @@ namespace AlgosGraph
             Number = _number;            
             lb.AutoSize = true;
             lb.Size = new Size(13, 20);
+            lb.Text = Number.ToString();
+            lb.Location = new Point(x - r / 2 - lb.Width / 5, y - r / 2);
         }
         public override string ToString()
         {
@@ -62,21 +66,20 @@ namespace AlgosGraph
             Rectangle rect = new Rectangle(x - r, y - r, r * 2, r * 2);
             Pen pen = new Pen(Color.Black);
             SolidBrush brush = new SolidBrush(Color.WhiteSmoke); ;
-            lb.Text = Number.ToString();
-            lb.Location = new Point(x - r/2 -lb.Width/5, y - r/2);
+            
             switch (Info)
             {
                 case 0:
-                    brush.Color = Color.WhiteSmoke;
                     lb.BackColor = Color.WhiteSmoke;
+                    brush.Color = Color.WhiteSmoke;                    
                     break;
                 case 1:
-                    brush.Color = Color.Red;
-                    lb.BackColor = Color.Red;
+                    lb.BackColor = Color.SkyBlue;
+                    brush.Color = Color.SkyBlue;                    
                     break;
                 case 2:
-                    brush.Color = Color.Gray;
-                    lb.BackColor = Color.Gray;
+                    lb.BackColor = Color.LightGray;
+                    brush.Color = Color.LightGray;                    
                     break;
             }
             g.FillEllipse(brush, rect);
@@ -88,14 +91,18 @@ namespace AlgosGraph
         public Vertex From { get; set; } //откуда
         public Vertex To { get; set; } //куда
         public int Weight { get; set; } //вес, по умолчанию всегда равно 1
-        public int Info { get; set; }
-        
+        public int Info { get; set; } //для покраски
+        public Label lb;
         public Edge(Vertex F,Vertex T, int w = 1) 
         {
             Info = 0;
             From = F;
             To = T;
             Weight = w;
+            lb = new Label();           
+            lb.AutoSize = true;
+            lb.Size = new Size(13, 20);
+            lb.Text = Weight.ToString();            
         }
         public void draw(Panel sender,Graphics g) //рисование ребра
         {
@@ -105,18 +112,15 @@ namespace AlgosGraph
             {
                 case 0:
                     pen.Color = Color.Black;
-                    
-                    break;
-                case 1:
-                    pen.Color = Color.Red;
-                    
-                    break;
+                    pen.Width = 1;
+                    break;               
                 case 2:
-                    pen.Color = Color.Red;
-                   
+                    pen.Color = Color.DeepSkyBlue;
+                    pen.Width = 2;
                     break;
             }
             g.DrawLine(pen, From.x,From.y,To.x,To.y);
+            lb.Location = new Point((From.x + To.x)/2, (From.y + To.y) / 2);
         }
 
     }
@@ -229,6 +233,27 @@ namespace AlgosGraph
                 E[i].Info = 0;
             }
         }
+        public int GetEdgeIndex(Vertex from, Vertex to) 
+        {
+            for(int i = 0;i <ECount;i++)            
+            {
+                if (E[i].From == from)
+                {
+                    if (E[i].To == to)
+                    {
+                        return i;
+                    }
+                }
+                else if (E[i].From == to)
+                {
+                    if (E[i].To == from)
+                    {
+                        return i;
+                    }
+                }
+            }
+            return 0;
+        }
         public void IsEdge(Vertex from,Vertex to) 
         {
             foreach (var edge in E)
@@ -251,6 +276,28 @@ namespace AlgosGraph
                 }            
             }          
         }
+        public void isEdgeDeik(int index1,int index2) //для алгоритма Дейкстры
+        {
+            foreach(var edge in E) 
+            {
+                if(edge.From.Number - 1 == index1) 
+                {
+                    if(edge.To.Number - 1 == index2) 
+                    {
+                        edge.Info = 2;
+                        break;
+                    }
+                }
+                else if (edge.From.Number - 1 == index2)
+                {
+                    if (edge.To.Number - 1 == index1)
+                    {
+                        edge.Info = 2;
+                        break;
+                    }
+                }
+            }
+        }
         public void Remove() //удаление графа
         {
             for(int i = ECount - 1; i >= 0; i--) 
@@ -262,7 +309,8 @@ namespace AlgosGraph
                 V.RemoveAt(i);
             }
         }
-        public int[,] getMatrix()  //получение матрицы смежности
+        
+        public int[,] getMatrix()  //получение матрицы связей
         {
             var matrix = new int[V.Count, V.Count];
 
@@ -270,7 +318,8 @@ namespace AlgosGraph
             {
                 var row = edge.From.Number - 1;
                 var column = edge.To.Number - 1;
-                matrix[row, column] = edge.Weight; 
+                matrix[row, column] = edge.Weight;
+                matrix[column, row] = edge.Weight;
             }
             return matrix;
         }
@@ -312,7 +361,7 @@ namespace AlgosGraph
             }
             return list.Contains(finish);
         }
-        public void Find(Vertex start, Vertex goal)
+        public void Find(Vertex start, Vertex goal) //не используется
         {
             for (int i = 0; i < VCount; i++)
             {
@@ -335,7 +384,7 @@ namespace AlgosGraph
             }
         }
     }
-    class NameComparer : IComparer<Vertex>
+    class NameComparer : IComparer<Vertex> //для сортировки
     {
         public int Compare(Vertex o1, Vertex o2)
         {
